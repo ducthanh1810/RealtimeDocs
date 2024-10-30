@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  api:
+    image: api:1.0
+    restart: always
+    build:
+      context: ./server
+      dockerfile: Dockerfile.prod
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    volumes:
+      - static_volume:/home/app/api/static
+      - media_volume:/home/app/api/media
+      - wheels_volume:/usr/src/api/wheels
+    ports:
+      - 8000
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - redis
+    networks:
+      - app_network
+
+  web:
+    image: web:1.0
+    restart: always
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - 3000
+    env_file:
+      - ./.env.prod
+    depends_on:
+      - api
+    networks:
+      - app_network
+
+  nginx:
+    build: ./nginx
+    restart: always
+    volumes:
+      - static_volume:/home/app/api/static
+      - media_volume:/home/app/api/media
+    ports:
+      - 1337:80
+    depends_on:
+      - api
+      - web
+    networks:
+      - app_network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+
+volumes:
+  static_volume:
+  media_volume:
+  wheels_volume:
+
+networks:
+  app_network:
+    name: app_network
+    external: false
