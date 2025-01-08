@@ -29,6 +29,7 @@ export const CommentForm = ({
   const { mutate: CreateReply } = useMutation({
     mutationFn: ReplyApi().CreateReply,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`comments`] });
       queryClient.invalidateQueries({ queryKey: [`replies-${comment.id}`] });
       toast.success("Created reply Success");
     },
@@ -43,6 +44,9 @@ export const CommentForm = ({
   });
   const { mutate: UpdateCommentReaction } = useMutation({
     mutationFn: CommentApi().UpdateCommentReaction,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["comments"] });
+    },
   });
   const { mutate: UpdateCommentResolve } = useMutation({
     mutationFn: CommentApi().UpdateCommentResolve,
@@ -62,14 +66,14 @@ export const CommentForm = ({
 
   const [content, setContent] = useState<string>(comment.content);
   const [reactions, setReactions] = useState<ReactionType[]>(
-    JSON.parse(comment.reaction).reactions
+    JSON.parse(comment.reaction).reactions || []
   );
+  const [isEditReaction, setIsEditReaction] = useState(false);
   const [hiddenActions, setHiddenActions] = useState(true);
   const [isEdit, setIsEdit] = useState(false);
   const [isReply, setIsReply] = useState(false);
 
   const [enableEmojiPicker, setEnableEmojiPicker] = useState(false);
-  const [enableReaction, setEnableReaction] = useState(false);
   const [isResolve, setIsResolve] = useState(comment.resolve);
   const [MoreReply, setMoreReply] = useState(false);
 
@@ -111,16 +115,16 @@ export const CommentForm = ({
       textarea!.value += emoji;
       setContent(textarea!.value);
     }
-    enableReaction && reactions.length > 0
-      ? reactions.map((reaction: ReactionType) => {
-          if (reaction.icon == emoji) {
-            reaction.count++;
-            setReactions([...reactions]);
-            isHaveEmoji = false;
-          }
-        })
-      : setReactions([...reactions, { icon: emoji, count: 1 }]);
+    reactions.length > 0 &&
+      reactions.map((reaction: ReactionType) => {
+        if (reaction.icon == emoji) {
+          reaction.count++;
+          setReactions([...reactions]);
+          isHaveEmoji = false;
+        }
+      });
     isHaveEmoji && setReactions([...reactions, { icon: emoji, count: 1 }]);
+    setIsEditReaction(true);
   };
 
   const RemoveEmoji = (emoji: string) => {
@@ -132,6 +136,7 @@ export const CommentForm = ({
           : setReactions([...reactions]);
       }
     });
+    setIsEditReaction(true);
   };
 
   useEffect(() => {
@@ -153,7 +158,6 @@ export const CommentForm = ({
         !containerRef.current.contains(e.target as Node)
       ) {
         setEnableEmojiPicker(false);
-        setEnableReaction(false);
         setIsReply(false);
         setTimeout(() => setHiddenActions(true), 200);
       }
@@ -171,14 +175,16 @@ export const CommentForm = ({
   }, [comment]);
 
   useEffect(() => {
-    const data = {
-      reactions: reactions,
-    };
-    UpdateCommentReaction({
-      comment_id: comment.id,
-      reaction: JSON.stringify(data),
-    });
-  }, [reactions]);
+    isEditReaction &&
+      reactions.length > 0 &&
+      UpdateCommentReaction({
+        comment_id: comment.id,
+        reaction: JSON.stringify({
+          reactions: reactions,
+        }),
+      });
+    setIsEditReaction(false);
+  }, [isEditReaction]);
 
   return (
     <div className=" flex flex-col gap-2">
@@ -217,9 +223,9 @@ export const CommentForm = ({
             </p>
             <div className=" flex gap-1 px-2">
               {reactions &&
-                reactions.map((reaction: ReactionType) => (
+                reactions.map((reaction, idex) => (
                   <p
-                    key={reaction.icon}
+                    key={idex}
                     onClick={() => RemoveEmoji(reaction.icon)}
                     className="flex w-10 h-7 text-sm bg-blue-800/50 justify-center items-center rounded-2xl border-2 border-blue-800 hover:cursor-pointer"
                   >

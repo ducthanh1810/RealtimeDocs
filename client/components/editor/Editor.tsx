@@ -1,6 +1,6 @@
 "use client";
 
-import { $getSelection, $isRangeSelection } from "lexical";
+import { $getSelection, $isRangeSelection, EditorState } from "lexical";
 // import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import Theme from "./plugins/Theme";
 import { HeadingNode } from "@lexical/rich-text";
@@ -13,7 +13,7 @@ import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import React, { useEffect, useRef, useState } from "react";
 import ToolbarPlugin from "./plugins/ToolbarPlugin";
-import { authTokenType, CommentType, WsType } from "@/types";
+import { authTokenType, CommentType, UserType, WsType } from "@/types";
 import { MyWebSocket } from "@/api/ws";
 import { jwtDecode } from "jwt-decode";
 import { CommentCreateBox } from "../CommentCreateBox";
@@ -22,6 +22,10 @@ import { Button } from "../ui/button";
 import { UpdateStatePlugin } from "./UpdateStatePlugin";
 import { SetTextComment } from "./SetTextComment";
 import { Comment } from "../Comment";
+import { set } from "react-hook-form";
+import { CommentForm } from "../form/CommentForm";
+import { array } from "zod";
+import { cn } from "@/lib/utils";
 
 // Catch any errors that occur during Lexical updates and log them
 // or throw them as needed. If you don't throw them, Lexical will
@@ -35,19 +39,27 @@ function Placeholder() {
 export function Editor({
   document_id,
   content,
+  comments,
+  currentUserType,
+  setCollaboratorsAccess,
 }: {
   document_id: string;
   user_id: number;
   content: string;
-  comment: CommentType[];
+  comments: CommentType[];
+  currentUserType: boolean;
+  setCollaboratorsAccess: (access: string[]) => void;
 }) {
   const [documentContent, setDocumentContent] = useState<string>(content);
   const [isMySend, setIsMySend] = useState(true);
   const [lastSend, setLastSend] = useState(Date.now());
   const [ws, setWs] = useState<WsType | null>(null);
+  const [enableCreateComment, setEnableCreateComment] = useState(false);
   const [enableCommentBox, setEnableCommentBox] = useState(false);
+  const [comment, setComment] = useState<CommentType>();
   const [isSelected, setIsSelected] = useState(false);
-  const [selectedText, setSelectedText] = useState<string | null>(null);
+  const [chooseText, setChooseText] = useState(false);
+  const [locationSelect, setLocationSelect] = useState<any>();
   const [selectionPosition, setSelectionPosition] = useState<{
     y: number;
     x: number;
@@ -55,8 +67,6 @@ export function Editor({
   } | null>(null);
 
   const editAreaRef = useRef<HTMLDivElement>(null);
-
-  // console.log(documentContent);
 
   const initialConfig = {
     namespace: "Editor",
@@ -86,7 +96,8 @@ export function Editor({
   }, []);
 
   useEffect(() => {
-    if (ws) ws.subscribe(setDocumentContent, setIsMySend);
+    if (ws)
+      ws.subscribe(setDocumentContent, setIsMySend, setCollaboratorsAccess);
     return () => {
       ws?.close();
     };
@@ -102,10 +113,10 @@ export function Editor({
     } catch {}
   }, [documentContent]);
 
-  const onChange = (editorState: any) => {
+  const onChange = (editorState: EditorState) => {
     try {
-      const jsonState = JSON.stringify(editorState.toJSON());
-      setDocumentContent(jsonState);
+      const jsonState = editorState.toJSON();
+      setDocumentContent(JSON.stringify(jsonState));
       editorState.read(() => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
@@ -113,12 +124,23 @@ export function Editor({
           // const focusNode = selection.focus.getNode();
           const anchorOffset = selection.anchor.offset;
           const focusOffset = selection.focus.offset;
+          const keyFocus = selection.focus.key;
+          const indexFocus = Array.from(editorState._nodeMap.keys()).indexOf(
+            keyFocus
+          );
+
+          if (chooseText) {
+            editorState._nodeMap.keys().forEach((key, index) => {
+              if (key == keyFocus) {
+                setLocationSelect(index);
+              }
+            });
+            setEnableCreateComment(true);
+          }
 
           if (anchorOffset !== focusOffset) {
             setIsSelected(true);
             const selectedText = selection.getTextContent();
-            setSelectedText(selectedText);
-
             // Get selection position
             const domSelection = window.getSelection();
             if (domSelection && domSelection.rangeCount > 0) {
@@ -133,8 +155,7 @@ export function Editor({
             }
           } else {
             setIsSelected(false);
-            setEnableCommentBox(false);
-            setSelectedText(null);
+            setEnableCreateComment(false);
             setSelectionPosition(null);
           }
         }
@@ -142,8 +163,10 @@ export function Editor({
     } catch {}
   };
 
+  const DeleteCommentHandle = (idToDelete: any) => {};
+
   const SelectionButton = () => {
-    if (!isSelected || !selectedText || !selectionPosition) return null;
+    if (!isSelected || !selectionPosition || enableCreateComment) return null;
 
     return (
       <Button
@@ -155,8 +178,9 @@ export function Editor({
         }}
         className="bg-blue-800 text-white px-2 py-1 mt-1 rounded"
         onClick={() => {
+          setChooseText(true);
+          setTimeout(() => setChooseText(false), 200);
           setIsSelected(false);
-          setEnableCommentBox(true);
         }}
       >
         <MessageSquarePlus />
@@ -167,13 +191,21 @@ export function Editor({
   return (
     <LexicalComposer initialConfig={initialConfig}>
       <div className="editor-container size-full">
-        <div className="toolbar-wrapper flex min-w-full justify-between">
+        <div
+          className={cn(
+            "toolbar-wrapper flex min-w-full justify-between",
+            !currentUserType && "pointer-events-none"
+          )}
+        >
           <ToolbarPlugin />
         </div>
         <div className="editor-wrapper flex flex-col items-center justify-start">
           <div
             ref={editAreaRef}
-            className="editor-inner min-h-[1100px] relative mb-5 h-fit w-full max-w-[800px] shadow-md lg:mb-10"
+            className={cn(
+              "editor-inner min-h-[1100px] relative mb-5 h-fit w-full max-w-[800px] shadow-md lg:mb-10",
+              !currentUserType && "pointer-events-none"
+            )}
           >
             <RichTextPlugin
               contentEditable={
@@ -187,8 +219,8 @@ export function Editor({
             <UpdateStatePlugin State={documentContent} />
             <OnChangePlugin onChange={onChange} />
             <SelectionButton />
-            <SetTextComment isSelect={isSelected} />
-            {enableCommentBox && (
+            <SetTextComment isSetTextComment={chooseText} />
+            {enableCreateComment && (
               <CommentCreateBox
                 style={{
                   position: "absolute",
@@ -199,7 +231,14 @@ export function Editor({
                   }px`,
                 }}
                 documentId={document_id}
+                location={locationSelect}
+                setEnableCommentBox={setEnableCreateComment}
               />
+            )}
+            {enableCommentBox && comment && (
+              <div>
+                <p>{comment.content}</p>
+              </div>
             )}
           </div>
           <div className=" flex flex-col w-full lg:w-[350px] gap-2">

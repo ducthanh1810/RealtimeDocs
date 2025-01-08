@@ -2,17 +2,20 @@
 import { DocumentApi } from "@/api/documentApi";
 import { CollaborativeRoom } from "@/components/CollaborativeRoom";
 import Loader from "@/components/Loader";
-import { DocumentType, SearchParamProps } from "@/types";
+import { DocumentType, SearchParamProps, UserType } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { QueryClient } from "@tanstack/react-query";
+import AuthContext from "@/context/AuthContext";
 
 const DocumentPage = ({ params: { id } }: SearchParamProps) => {
   const router = useRouter();
   const queryClient = new QueryClient();
+  const { user } = useContext(AuthContext);
   const [Document, setDocument] = useState<DocumentType | null>(null);
+  const [currentUserType, setCurrentUserType] = useState<UserType>("viewer");
   const { data } = useQuery({
     queryKey: ["document"],
     queryFn: () => DocumentApi().Get(id),
@@ -34,6 +37,19 @@ const DocumentPage = ({ params: { id } }: SearchParamProps) => {
     };
     Document ? setDocument(data!.data) : getData();
   }, [data?.data]);
+
+  useEffect(() => {
+    if (!Document) return;
+    if (user && user.user == Document!.author_id) {
+      setCurrentUserType("editor");
+    } else {
+      Document?.collaborators?.forEach((collaborator) => {
+        if (user && user.user == collaborator.id) {
+          setCurrentUserType(collaborator.type ? "editor" : "viewer");
+        }
+      });
+    }
+  }, [Document]);
   return (
     <div>
       {!Document ? (
@@ -41,7 +57,7 @@ const DocumentPage = ({ params: { id } }: SearchParamProps) => {
       ) : (
         <CollaborativeRoom
           id={id}
-          currentUserType="editor"
+          currentUserType={currentUserType}
           document={Document}
         />
       )}

@@ -41,12 +41,14 @@ export function DocumentApi() {
   const AddCollaborator = ({
     document_id,
     collaborator_id,
+    type,
   }: {
     document_id: any;
     collaborator_id: any;
+    type: boolean;
   }) => {
     return api.post(
-      `/api/document/collaborator/${document_id}/${collaborator_id}`
+      `/api/document/collaborator/${document_id}/${collaborator_id}/${type}`
     );
   };
   const UpdateCollaboratorType = ({
@@ -56,7 +58,7 @@ export function DocumentApi() {
   }: {
     document_id: any;
     collaborator_id: any;
-    type: string;
+    type: boolean;
   }) => {
     return api.put(`/api/document/collaborator/`, {
       document_id,

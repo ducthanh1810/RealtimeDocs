@@ -122,3 +122,14 @@ def delete_reply(reply_id: int, db: Session = Depends(get_db), user: schemas.Tok
         raise HTTPException(status_code=404, detail="Reply not found")
     return JSONResponse(status_code = status.HTTP_200_OK, content=response)
 
+@router.put("/reply/{reply_id}/reaction", response_model=schemas.Reply)
+def update_comment_reaction(
+        data: schemas.CommentReaction, 
+        reply_id: int,
+        db: Session = Depends(get_db), 
+        user: schemas.TokenData = Depends(check_token)
+    ):
+    comment = crud.update_reply_reaction(db, reply_id, data)
+    if comment is None:
+        raise HTTPException(status_code=404, detail="Reply not found")
+    return comment

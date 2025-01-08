@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useContext, useState } from "react";
 
 import {
   Dialog,
@@ -18,6 +18,7 @@ import { Button } from "./ui/button";
 import { DocumentApi } from "@/api/documentApi";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import AuthContext from "@/context/AuthContext";
 
 export const DeleteModal = ({ roomId }: { roomId: number }) => {
   const queryClient = useQueryClient();
@@ -25,9 +26,9 @@ export const DeleteModal = ({ roomId }: { roomId: number }) => {
 
   const { mutate: DeleteDocument, isPending } = useMutation({
     mutationFn: DocumentApi().DeleteDocument,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
-      toast.success("Delete Document Success");
+      toast.success(data.data);
     },
   });
 

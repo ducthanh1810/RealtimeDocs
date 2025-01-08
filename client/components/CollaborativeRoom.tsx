@@ -8,10 +8,11 @@ import { useContext, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Input } from "./ui/input";
 import Loader from "./Loader";
-import { DocumentType } from "@/types";
+import { DocumentType, UserType } from "@/types";
 import ShareModal from "./ShareModal";
 import AuthContext from "@/context/AuthContext";
 import { UserSettingButton } from "./layout/UserSetting";
+import { AccessingUser } from "./AccessingUser";
 
 export const CollaborativeRoom = ({
   id,
@@ -19,7 +20,7 @@ export const CollaborativeRoom = ({
   document,
 }: {
   id: string;
-  currentUserType: string;
+  currentUserType: UserType;
   document: DocumentType;
 }) => {
   const { mutate: updateTitle } = useMutation({
@@ -31,6 +32,7 @@ export const CollaborativeRoom = ({
   const [loading] = useState(false);
   const [documentTitle, setDocumentTitle] = useState(document.title);
   const [content] = useState(document.content);
+  const [CollaboratorsAccess, setCollaboratorsAccess] = useState<string[]>([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -97,6 +99,12 @@ export const CollaborativeRoom = ({
           {loading && <p className="text-sm text-gray-400">saving...</p>}
         </div>
         <div className=" flex gap-2 justify-items-center">
+          <AccessingUser
+            document_id={document.id}
+            author_id={document.author_id}
+            collaborators={document.collaborators}
+            collaboratorsAccessing={CollaboratorsAccess}
+          />
           {user && document.author_id == user.user && (
             <ShareModal
               roomId={id}
@@ -113,9 +121,11 @@ export const CollaborativeRoom = ({
       ) : (
         <Editor
           document_id={id}
-          user_id={document?.author_id}
+          user_id={document.author_id}
           content={content}
-          comment={document?.comments}
+          comments={document.comments}
+          currentUserType={currentUserType == "viewer" ? false : true}
+          setCollaboratorsAccess={setCollaboratorsAccess}
         />
       )}
     </main>

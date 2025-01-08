@@ -14,7 +14,6 @@ class Profile(ProfileBase):
     full_name: str
     position: str
     image: str
-    verified: bool
 
     class Config:
         orm_mode = True
@@ -141,4 +140,4 @@ class DocumentFull(Document):
 class UpdateCollaboratorType(BaseModel):
     document_id: int
     collaborator_id: int
-    type: str
+    type: bool

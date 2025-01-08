@@ -16,10 +16,11 @@ def verify_token(token):
         except Exception as e:
             print(e)
             return None
-        
+              
 class ConnectionManager:
-    def __init__(self):
-        self.active_connections: dict[str, list[WebSocket]] = {}    
+    def __init__(self):        
+        self.active_connections: dict[str, list[WebSocket]] = {}   
+        self.list_user_in_room: dict[str, list[str]] = {}   
 
     async def connect(self, websocket: WebSocket, room: str):
         token = websocket.query_params.get("token")
@@ -30,15 +31,19 @@ class ConnectionManager:
                 await websocket.accept()
                 if room not in self.active_connections:
                     self.active_connections[room] = []
+                    self.list_user_in_room[room] = []
+                self.list_user_in_room[room].append(user)
                 self.active_connections[room].append(websocket)
                 return "connected"
         return "not connected"
 
-    def disconnect(self, websocket: WebSocket, room: str):
+    def disconnect(self, websocket: WebSocket, room: str, user: str):
         if room in self.active_connections:
             self.active_connections[room].remove(websocket)
+            self.list_user_in_room[room].remove(user)
             if not self.active_connections[room]:
                 del self.active_connections[room]
+                del self.list_user_in_room[room]
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
@@ -47,7 +52,10 @@ class ConnectionManager:
         if room in self.active_connections:
             for connection in self.active_connections[room]:
                 if connection != sender_websocket:
-                    await connection.send_text(message)
+                    list_user_in_room = ""
+                    for user in self.list_user_in_room[room]:
+                        list_user_in_room += f"||{user}"
+                    await connection.send_text(f"{message}{list_user_in_room}")
 
 manager = ConnectionManager()
 
@@ -56,9 +64,13 @@ async def websocket_endpoint(websocket: WebSocket, client_room: str, client_id: 
     ws = await manager.connect(websocket, client_room)
     db = SessionLocal()
     try:
+        d = 0
         while ws == "connected":
+            await manager.broadcast(f'{client_id}||connection', client_room, websocket) if d == 0 else None
+            d += 1
             data = await websocket.receive_text()
             await manager.broadcast(f'{client_id}||{data}', client_room, websocket)
             crud.update_document(db, client_room, "", data)
     except WebSocketDisconnect:
-        manager.disconnect(websocket, client_room)
+        manager.disconnect(websocket, client_room, client_id)
+        await manager.broadcast(f'{client_id}||null', client_room, websocket)

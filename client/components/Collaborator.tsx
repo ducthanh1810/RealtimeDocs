@@ -28,6 +28,7 @@ const Collaborator = ({
   const [userType, setUserType] = useState<UserType>(
     collaborator.type == false ? "viewer" : "editor"
   );
+
   const [loading, setLoading] = useState(false);
 
   const shareDocumentHandler = async (type: string) => {
@@ -36,7 +37,7 @@ const Collaborator = ({
     UpdateType({
       document_id: roomId,
       collaborator_id: collaborator.user_id,
-      type: type,
+      type: type == "viewer" ? false : true,
     });
 
     setLoading(false);

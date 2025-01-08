@@ -40,10 +40,10 @@ export const Reply = ({
               key={reply.id}
               reply={reply}
               resolve={resolve}
+              comment_id={comment_id}
               deleteCm={DeleteCommentHandle}
             />
           ))}
-          {replies?.length === 0 && <p>No replies yet.</p>}
         </div>
       )}
     </div>

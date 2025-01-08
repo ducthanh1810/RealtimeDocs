@@ -30,10 +30,13 @@ export function GetProfile() {
   const Get = () => {
     return api.get(`/api/me`);
   };
+  const GetAuthorDocument = (document_id: number) => {
+    return api.get(`/api/document/${document_id}/author`);
+  };
   const Put = (value: FormData) => {
     return api.put(`/api/me`, value, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   };
-  return { Get, Put };
+  return { Get, GetAuthorDocument, Put };
 }

@@ -75,6 +75,18 @@ def get_documents(db: Session, user_id, skip: int = 0, limit: int = 100):
     list_documents = documents + user.documents_collaborative
     return list_documents
 
+def get_document_author(db: Session, document_id: int, user: int):
+    document = db.query(models.Document).filter(models.Document.id == document_id).first()
+    if document is None:
+        return "Document not found"
+    if document.author_id == user:
+        return db.query(models.Profile).filter(models.Profile.user_id == document.author_id).first()
+    collaborator = db.query(models.Collaborator).filter(models.Collaborator.document_id == document_id, models.Collaborator.user_id == user).first()
+    if collaborator is None:
+        return "You are not the collaborator of this document"
+    author = db.query(models.Profile).filter(models.Profile.user_id == document.author_id).first()
+    return author
+
 def create_document(db: Session, document: schemas.DocumentBase, user_id: int):
     db_document = models.Document(**document.dict(), author_id = user_id)
     db.add(db_document)
@@ -116,8 +128,10 @@ def get_collaborators(db: Session, document_id, collaborator_id):
         ).first()
     return db_collaborator
 
-def add_collaborator(db: Session, document_id, user_id, collaborator_id):
+def add_collaborator(db: Session, document_id, user_id, collaborator_id, type_collaborator):
     collaborator = db.query(models.User).filter((models.User.username == collaborator_id) | (models.User.email == collaborator_id)).first()
+    if not collaborator:
+        return "User not found"
     profile = collaborator.profile
     db_document = db.query(models.Document).filter(models.Document.id == document_id).first()
     if not db_document:
@@ -127,7 +141,7 @@ def add_collaborator(db: Session, document_id, user_id, collaborator_id):
     db_collaborator = db.query(models.Collaborator).filter(models.Collaborator.document_id == document_id, models.Collaborator.user_id == collaborator.id).first()
     if db_collaborator:
         return "This user is already a collaborator"
-    db_collaborator = models.Collaborator(document_id = document_id, user_id = collaborator.id)
+    db_collaborator = models.Collaborator(document_id = document_id, user_id = collaborator.id, type = type_collaborator)
     db.add(db_collaborator)
     db_document.collaborators.append(db_collaborator)
     db_document.user_collaborator.append(profile)
@@ -135,19 +149,16 @@ def add_collaborator(db: Session, document_id, user_id, collaborator_id):
     return "Collaborator added successful"
 
 def update_collaborator_type(db: Session, document_id: str, user_id, collaborator_id, type):
-    db_document = db.query(models.Document).filter(models.Document.id == document_id, models.Document.author_id == user_id).first()
-    if not db_document:
-        return db_document
+    # db_document = db.query(models.Document).filter(models.Document.id == document_id, models.Document.author_id == user_id).first()
+    # if not db_document:
+    #     return db_document
     db_collaborator = db.query(models.Collaborator).filter(
         models.Collaborator.document_id == document_id, 
         models.Collaborator.user_id == collaborator_id
         ).first()
     if not db_collaborator:
         return "This user is not a collaborator"
-    if type == 'editor':
-        db_collaborator.type = True
-    else:
-        db_collaborator.type = False
+    db_collaborator.type = type
     db.commit()
     return "Collaborator type updated successful"
 
@@ -157,7 +168,7 @@ def remove_collaborator(db: Session, document_id, user_id, collaborator_id):
     db_document = db.query(models.Document).filter(models.Document.id == document_id).first()
     if not db_document:
         return db_document
-    if db_document.author_id!= user_id:
+    if db_document.author_id != user_id:
         return "You are not the author of this document"
     db_collaborator = db.query(models.Collaborator).filter(
         models.Collaborator.document_id == document_id, 
@@ -201,6 +212,7 @@ def update_comment_reaction(db: Session, comment_id, comment: schemas.CommentRea
     db_comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
     db_comment.reaction = comment.reaction
     db.commit()
+    db.refresh(db_comment)
     return db_comment
 
 def update_comment_resolve(db: Session, comment_id, user_id):
@@ -235,12 +247,17 @@ def create_reply(db: Session, reply: schemas.ReplyBase, comment_id: int, user_id
     db_reply = models.CommentReply(**reply.dict(), user_id = user_id, comment_id = comment_id)
     db.add(db_reply)
     db.commit()
-    db.refresh(db_reply)
     return db_reply
 
 def update_reply(db: Session, reply_id, user_id, content):
     db_reply = db.query(models.CommentReply).filter(models.CommentReply.id == reply_id, models.CommentReply.user_id == user_id).first()
     db_reply.content = content
+    db.commit()
+    return db_reply
+
+def update_reply_reaction(db: Session, reply_id, reply: schemas.CommentReaction):
+    db_reply = db.query(models.CommentReply).filter(models.CommentReply.id == reply_id).first()
+    db_reply.reaction = reply.reaction
     db.commit()
     return db_reply
 

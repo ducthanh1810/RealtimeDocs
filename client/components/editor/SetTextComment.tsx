@@ -3,14 +3,14 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { $getSelection, $isRangeSelection } from "lexical";
 
 export const SetTextComment = memo(function SetTextComment({
-  isSelect,
+  isSetTextComment,
 }: {
-  isSelect: boolean;
+  isSetTextComment: boolean;
 }) {
   const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    if (isSelect) {
+    if (isSetTextComment) {
       editor.update(() => {
         const selection = $getSelection();
         if ($isRangeSelection(selection)) {
@@ -19,7 +19,7 @@ export const SetTextComment = memo(function SetTextComment({
         }
       });
     }
-  }, [isSelect]);
+  }, [isSetTextComment]);
 
   return <></>;
 });

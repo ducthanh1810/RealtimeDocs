@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn, dateConverter } from "@/lib/utils";
 import { ToolTip } from "./Tooltip";
@@ -11,7 +11,7 @@ import { CommentType, ReplyType } from "@/types";
 type CommentHeaderProps = {
   comment: ReplyType | CommentType;
   hiddenActions: boolean;
-  isResolve: boolean;
+  isResolve?: boolean;
   ResolveHandle?: () => void;
   setIsEdit: (value: boolean) => void;
   DeleteHandle: () => void;
@@ -35,8 +35,31 @@ export const CommentBoxHeader = ({
 }: CommentHeaderProps) => {
   const { user } = useContext(AuthContext);
   const [enableReaction, setEnableReaction] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setEnableReaction(false);
+      }
+    };
+
+    window.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
-    <div className=" flex flex-row gap-2 justify-between items-center">
+    <div
+      ref={containerRef}
+      className=" flex flex-row gap-2 justify-between items-center"
+    >
       <div className=" flex gap-2">
         {comment.user && (
           <Avatar className="w-7 h-7">
@@ -59,12 +82,14 @@ export const CommentBoxHeader = ({
           hiddenActions ? "hidden" : "flex relative gap-2 justify-items-center"
         )}
       >
-        <ToolTip text="Resolve" className="w-5">
-          <CircleCheck
-            onClick={ResolveHandle}
-            className=" hover:cursor-pointer"
-          />
-        </ToolTip>
+        {isResolve !== undefined && (
+          <ToolTip text="Resolve" className="w-5">
+            <CircleCheck
+              onClick={ResolveHandle}
+              className=" hover:cursor-pointer"
+            />
+          </ToolTip>
+        )}
         {!isResolve && (
           <>
             <ToolTip text="Add reaction" className="w-5">
@@ -88,7 +113,7 @@ export const CommentBoxHeader = ({
                 />
               </div>
             )}
-            {user.user == comment.user_id && (
+            {user && user.user == comment.user_id && (
               <ToolTip text="More" className="w-5">
                 <MoreActions
                   isOpen={!hiddenActions}

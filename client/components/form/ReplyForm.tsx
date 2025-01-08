@@ -16,37 +16,44 @@ export const ReplyForm = ({
   reply,
   resolve,
   style,
+  comment_id,
   deleteCm,
 }: {
   reply: ReplyType;
   resolve: boolean;
+  comment_id: number;
   style?: React.CSSProperties;
   deleteCm: (id: number) => void;
 }) => {
   const queryClient = useQueryClient();
   const { mutate: UpdateReply } = useMutation({
     mutationFn: ReplyApi().UpdateReply,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["replies"] });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`replies-${comment_id}`] });
       toast.success("Update Reply Success");
+      setContent(data.data.content);
     },
   });
   const { mutate: UpdateReplyReaction } = useMutation({
     mutationFn: ReplyApi().UpdateReplyReaction,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`replies-${comment_id}`] });
+    },
   });
   const { mutate: DeleteReply } = useMutation({
     mutationFn: ReplyApi().DeleteReply,
     onSuccess: () => {
       deleteCm(reply.id);
-      queryClient.invalidateQueries({ queryKey: ["replies"] });
+      queryClient.invalidateQueries({ queryKey: [`replies-${comment_id}`] });
       toast.success("Delete Reply Success");
     },
   });
 
   const [content, setContent] = useState<string>(reply.content);
   const [reactions, setReactions] = useState<ReactionType[]>(
-    JSON.parse(reply.reaction).reactions
+    JSON.parse(reply.reaction).reactions || []
   );
+  const [isEditReaction, setIsEditReaction] = useState(false);
   const [hiddenActions, setHiddenActions] = useState(true);
   const [isEdit, setIsEdit] = useState(false);
 
@@ -60,12 +67,11 @@ export const ReplyForm = ({
     DeleteReply({ reply_id: reply.id });
   };
 
-  const PostReplyHandle = () => {
-    reply &&
-      UpdateReply({
-        reply_id: reply.id,
-        content: content,
-      });
+  const PostReplyHandle = (value: string) => {
+    UpdateReply({
+      reply_id: reply.id,
+      content: value,
+    });
     setIsEdit(false);
     setEnableEmojiPicker(false);
   };
@@ -77,16 +83,16 @@ export const ReplyForm = ({
       textarea!.value += emoji;
       setContent(textarea!.value);
     }
-    enableReaction && reactions.length > 0
-      ? reactions.map((reaction: ReactionType) => {
-          if (reaction.icon == emoji) {
-            reaction.count++;
-            setReactions([...reactions]);
-            isHaveEmoji = false;
-          }
-        })
-      : setReactions([...reactions, { icon: emoji, count: 1 }]);
+    reactions.length > 0 &&
+      reactions.map((reaction: ReactionType) => {
+        if (reaction.icon == emoji) {
+          reaction.count++;
+          setReactions([...reactions]);
+          isHaveEmoji = false;
+        }
+      });
     isHaveEmoji && setReactions([...reactions, { icon: emoji, count: 1 }]);
+    setIsEditReaction(true);
   };
 
   const RemoveEmoji = (emoji: string) => {
@@ -98,6 +104,7 @@ export const ReplyForm = ({
           : setReactions([...reactions]);
       }
     });
+    setIsEditReaction(true);
   };
 
   useEffect(() => {
@@ -137,19 +144,18 @@ export const ReplyForm = ({
   }, [reply]);
 
   useEffect(() => {
-    const data = {
-      reactions: reactions,
-    };
     UpdateReplyReaction({
       reply_id: reply.id,
-      reaction: JSON.stringify(data),
+      reaction: JSON.stringify({
+        reactions: reactions,
+      }),
     });
-  }, [reactions]);
+    setIsEditReaction(false);
+  }, [isEditReaction]);
 
   return (
-    <div className=" flex flex-col gap-2">
+    <div ref={containerRef} className=" flex flex-col gap-2">
       <div
-        ref={containerRef}
         onMouseOver={() => setHiddenActions(false)}
         style={style}
         className={cn(
@@ -161,7 +167,6 @@ export const ReplyForm = ({
         <CommentBoxHeader
           comment={reply}
           hiddenActions={hiddenActions}
-          isResolve={resolve}
           setIsEdit={setIsEdit}
           DeleteHandle={DeleteHandle}
           EmojiHandle={EmojiHandle}

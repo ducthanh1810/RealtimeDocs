@@ -26,6 +26,7 @@ export const CommentEditForm = ({
 
   const [enableEmojiPicker, setEnableEmojiPicker] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const SendContentHandle = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -51,8 +52,8 @@ export const CommentEditForm = ({
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        textareaRef.current &&
-        !textareaRef.current.contains(e.target as Node)
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
       ) {
         setEnableEmojiPicker(false);
         setIsEdit(false);
@@ -67,7 +68,7 @@ export const CommentEditForm = ({
   }, []);
 
   return (
-    <>
+    <div ref={containerRef}>
       <textarea
         ref={textareaRef}
         placeholder="Write a comment..."
@@ -109,6 +110,6 @@ export const CommentEditForm = ({
           />
         </ToolTip>
       </div>
-    </>
+    </div>
   );
 };

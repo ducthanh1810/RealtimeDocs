@@ -54,8 +54,8 @@ export declare type DocumentType = {
   title: string;
   created_at: string;
   author_id: number;
-  collaborators: list[Profile];
-  comments: list[CommentType];
+  collaborators: Profile[];
+  comments: CommentType[];
 };
 
 export declare type CommentType = {
@@ -68,7 +68,7 @@ export declare type CommentType = {
   resolve: boolean;
   document_id: number;
   user_id: number;
-  replies: list[ReplyType];
+  replies: ReplyType[];
   user: Profile;
 };
 
@@ -153,7 +153,8 @@ export interface WsType {
   push: (data: string) => void;
   subscribe: (
     setData: (data: any) => void,
-    setIsMySend: (is: boolean) => void
+    setIsMySend: (is: boolean) => void,
+    setCollaboratorsAccess: (data: string[]) => void
   ) => void;
   close: () => void;
 }

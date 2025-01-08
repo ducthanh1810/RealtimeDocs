@@ -9,8 +9,11 @@ import { DocumentType } from "@/types";
 import { UserSettingButton } from "@/components/layout/UserSetting";
 import { dateConverter } from "@/lib/utils";
 import { DeleteModal } from "@/components/DeleteModal";
+import AuthContext from "@/context/AuthContext";
+import { useContext } from "react";
 
 export default function Home() {
+  const { user } = useContext(AuthContext);
   const {
     data: documents,
     isPending,
@@ -61,7 +64,9 @@ export default function Home() {
                     </p>
                   </div>
                 </Link>
-                <DeleteModal roomId={document.id} />
+                {user && user.user == document.author_id && (
+                  <DeleteModal roomId={document.id} />
+                )}
               </li>
             ))}
           </ul>

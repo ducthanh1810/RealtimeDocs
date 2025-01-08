@@ -13,6 +13,9 @@ export const Comment = ({
   const { data, isPending } = useQuery({
     queryKey: ["comments"],
     queryFn: () => CommentApi().GetList(documentId),
+    // refetchInterval(query) {
+    //   return 1000;
+    // },
   });
 
   const [comments, setComments] = useState<CommentType[]>();

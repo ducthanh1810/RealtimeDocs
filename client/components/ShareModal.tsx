@@ -43,7 +43,11 @@ const ShareModal = ({
 
   const shareDocumentHandler = async () => {
     setLoading(true);
-    AddCollaborator({ document_id: roomId, collaborator_id: email });
+    AddCollaborator({
+      document_id: roomId,
+      collaborator_id: email,
+      type: userType == "viewer" ? false : true,
+    });
   };
 
   return (

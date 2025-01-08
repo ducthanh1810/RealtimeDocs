@@ -20,6 +20,7 @@ export const ReplyEditForm = ({ isResolve, Sendhandle }: ReplyEditProps) => {
   const [isReply, setIsReply] = useState(false);
   const [enableEmojiPicker, setEnableEmojiPicker] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const SendContentHandle = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -46,8 +47,8 @@ export const ReplyEditForm = ({ isResolve, Sendhandle }: ReplyEditProps) => {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        textareaRef.current &&
-        !textareaRef.current.contains(e.target as Node)
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
       ) {
         setContent("");
         setEnableEmojiPicker(false);
@@ -63,7 +64,7 @@ export const ReplyEditForm = ({ isResolve, Sendhandle }: ReplyEditProps) => {
   }, []);
 
   return (
-    <div>
+    <div ref={containerRef}>
       <hr className="hr-solid" />
       <textarea
         placeholder="Reply to thread..."
@@ -80,7 +81,7 @@ export const ReplyEditForm = ({ isResolve, Sendhandle }: ReplyEditProps) => {
       />
       {isReply && (
         <div className=" flex justify-between">
-          <div className=" flex justify-items-center gap-1">
+          <div className=" flex relative justify-items-center gap-1">
             <ToolTip text="Tag" className="w-5">
               <AtSign className=" hover:cursor-pointer" />
             </ToolTip>
@@ -93,6 +94,11 @@ export const ReplyEditForm = ({ isResolve, Sendhandle }: ReplyEditProps) => {
             {enableEmojiPicker && (
               <div className=" absolute top-6 z-10">
                 <EmojiPicker
+                  onEmojiClick={(emoji) => {
+                    const textarea = textareaRef.current;
+                    textarea!.value += emoji.emoji;
+                    setContent(textarea!.value);
+                  }}
                   emojiStyle={EmojiStyle.GOOGLE}
                   searchDisabled={true}
                   width={250}

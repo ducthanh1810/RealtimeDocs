@@ -109,7 +109,12 @@ export const UserAuthForm = ({ className }: { className?: string }) => {
             )}
           />
           <div>{err && <p className=" text-red-600 text-center">{err}</p>}</div>
-          <Button disabled={isLoading} className="ml-auto w-full" type="submit">
+          <Button
+            disabled={isLoading}
+            variant={"default"}
+            className="ml-auto w-full border-2 hover:bg-[#0a1221]"
+            type="submit"
+          >
             {isLoading ? (
               <LoaderCircle className="animate-spin ml-2" />
             ) : (

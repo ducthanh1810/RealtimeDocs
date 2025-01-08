@@ -12,14 +12,16 @@ export function MyWebSocket(
   };
   const subscribe = (
     setData: (data: any) => void,
-    setIsMySend: (is: boolean) => void
+    setIsMySend: (is: boolean) => void,
+    setCollaboratorsAccess: (data: string[]) => void
   ) => {
     ws.onmessage = function (event) {
       try {
         const data = event.data.split("||");
         if (user_id != data[0]) {
-          setData(data[1]);
+          setData(data[1].length > 20 ? data[1] : null);
           setIsMySend(false);
+          setCollaboratorsAccess(data.slice(2));
         }
       } catch (err) {
         console.log(err);

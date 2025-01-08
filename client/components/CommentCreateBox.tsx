@@ -17,10 +17,12 @@ export const CommentCreateBox = ({
   documentId,
   style,
   location,
+  setEnableCommentBox,
 }: {
   documentId: string;
   style?: React.CSSProperties;
-  location?: string;
+  location?: string | null;
+  setEnableCommentBox?: (value: boolean) => void;
 }) => {
   const queryClient = useQueryClient();
   const { mutate: CreateComment } = useMutation({
@@ -45,10 +47,11 @@ export const CommentCreateBox = ({
         CreateComment({
           document_id: documentId,
           content: content,
-          location: location ? location : "{}",
+          location: location ? JSON.stringify(location) : "",
         });
       setContent("");
       setEnableEmojiPicker(false);
+      setEnableCommentBox && setEnableCommentBox(false);
     }
   };
 
@@ -57,10 +60,11 @@ export const CommentCreateBox = ({
       CreateComment({
         document_id: documentId,
         content: content,
-        location: location ? location : "{}",
+        location: location ? JSON.stringify(location) : "",
       });
     setContent("");
     setEnableEmojiPicker(false);
+    setEnableCommentBox && setEnableCommentBox(false);
   };
 
   useEffect(() => {

@@ -22,6 +22,13 @@ def create_document(data: schemas.DocumentBase, db: Session = Depends(get_db), u
         raise HTTPException(status_code=400, detail="Create document failed")
     return document
 
+@router.get("/document/{document_id}/author", response_model=schemas.Profile)
+def get_author(document_id: int, db: Session = Depends(get_db), user: schemas.TokenData = Depends(check_token)):
+    author = crud.get_document_author(db, document_id, user.user_id)
+    if author is None:
+        raise HTTPException(status_code=404, detail="Author not found")       
+    return author
+
 @router.get("/document/{document_id}", response_model=schemas.DocumentFull)
 def read_document(document_id: int, rq: Request, db: Session = Depends(get_db), user: schemas.TokenData = Depends(check_token)):
     document = crud.get_document(db, document_id, user.user_id)
@@ -102,11 +109,11 @@ def delete_document(document_id: int, db: Session = Depends(get_db), user: schem
         raise HTTPException(status_code=404, detail="Document not found")
     return JSONResponse(status_code = status.HTTP_200_OK, content=response)
 
-@router.post("/document/collaborator/{document_id}/{collaborator_id}")
-def add_collaborator(document_id: int, collaborator_id: str, db: Session = Depends(get_db), user: schemas.TokenData = Depends(check_token)):
+@router.post("/document/collaborator/{document_id}/{collaborator_id}/{type}")
+def add_collaborator(document_id: int, collaborator_id: str, type: bool, db: Session = Depends(get_db), user: schemas.TokenData = Depends(check_token)):
     if user.user_id == collaborator_id:
         raise HTTPException(status_code=403, detail="You cannot add yourself as a collaborator to the document")
-    response = crud.add_collaborator(db, document_id, user.user_id, collaborator_id)
+    response = crud.add_collaborator(db, document_id, user.user_id, collaborator_id, type)
     if not response:
         raise HTTPException(status_code=404, detail="Document not found")
     return JSONResponse(status_code=status.HTTP_200_OK, content=response)
