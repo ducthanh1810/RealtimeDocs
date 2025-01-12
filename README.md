@@ -26,7 +26,7 @@ Collaborative LiveDoc là trình soạn thảo văn bản cộng tác theo thờ
 
 👉 **Authentication**: Đăng nhập bằng tài khoản với hình thức xác thực Auth JWT. Quản lý phiên đăng nhập với redis giới hạn đăng nhập đồng thời.
 
-👉 **Collaborative Text Editor**: Thư viện cung cấp công cụ chỉnh sửa văn bản cơ bản.
+👉 **Collaborative Text Editor**: Quan sát và chỉnh sửa văn bản đồng thời với các tài khoản khác.
 
 👉 **Documents Management**
 
