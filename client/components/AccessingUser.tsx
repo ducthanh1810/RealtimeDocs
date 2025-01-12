@@ -43,6 +43,7 @@ export const AccessingUser = ({
         (collaborator, index) =>
           index < 2 && (
             <Avatar
+              key={collaborator.user_id}
               className={cn(
                 collaboratorsAccessing?.includes(
                   collaborator.user_id.toString()
