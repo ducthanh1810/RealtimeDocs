@@ -2,7 +2,7 @@
 import { DocumentApi } from "@/api/documentApi";
 import { AddDocumentBtn } from "@/components/AddDocumentBtn";
 import { Header } from "@/components/layout/Header";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { DocumentType } from "@/types";
@@ -10,10 +10,15 @@ import { UserSettingButton } from "@/components/layout/UserSetting";
 import { dateConverter } from "@/lib/utils";
 import { DeleteModal } from "@/components/DeleteModal";
 import AuthContext from "@/context/AuthContext";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
+import { GetProfile } from "@/api/auth";
 
 export default function Home() {
-  const { user } = useContext(AuthContext);
+  const { data } = useQuery({
+    queryKey: ["user"],
+    queryFn: () => GetProfile().Get(),
+  });
+  const { user, setUser } = useContext(AuthContext);
   const {
     data: documents,
     isPending,
@@ -23,6 +28,12 @@ export default function Home() {
     queryFn: () => DocumentApi().GetList(),
     refetchInterval: 1000,
   });
+
+  useEffect(() => {
+    if (data?.data) {
+      setUser(data.data);
+    }
+  }, [data?.data]);
   return (
     <main className=" home-container">
       <Header>

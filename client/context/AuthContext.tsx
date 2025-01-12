@@ -22,19 +22,9 @@ const AuthContext = createContext<{
 export default AuthContext;
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const { data } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => GetProfile().Get(),
-  });
   const [user, setUser] = useState<User>();
   const [title, setTitle] = useState("");
   const [avatar, setAvatar] = useState("");
-
-  useEffect(() => {
-    if (data?.data) {
-      setUser(data.data);
-    }
-  }, [data?.data]);
 
   const contextData = {
     user,

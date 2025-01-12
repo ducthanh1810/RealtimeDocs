@@ -65,7 +65,10 @@ export const CollaborativeRoom = ({
   return (
     <main>
       <Header>
-        <div ref={containerRef} className="flex items-center gap-x-4">
+        <div
+          ref={containerRef}
+          className="flex items-center gap-x-2 sm:gap-x-4"
+        >
           {loading ? (
             <h1>Loading...</h1>
           ) : editing && !loading ? (
@@ -98,7 +101,7 @@ export const CollaborativeRoom = ({
 
           {loading && <p className="text-sm text-gray-400">saving...</p>}
         </div>
-        <div className=" flex gap-2 justify-items-center">
+        <div className="flex gap-2 justify-items-center">
           <AccessingUser
             document_id={document.id}
             author_id={document.author_id}

@@ -2,8 +2,11 @@
 
 from datetime import timedelta
 import os
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from typing import Optional
+
+load_dotenv()
 
 path_parent = os.path.dirname(os.path.abspath(__file__))
 private_key_path = os.path.join(path_parent, 'private.pem')
@@ -18,12 +21,6 @@ REFRESH_TOKEN_EXPIRE_DAYS = timedelta(days = 1)
 redis_host = os.environ.get('REDIS_HOST')
 redis_port = os.environ.get('REDIS_PORT')
 redis_db = os.environ.get('REDIS_DB')
-
-# redis_host='localhost'
-# redis_port=6379
-# redis_db=0
-
-
 
 class User(BaseModel):
     username: str
