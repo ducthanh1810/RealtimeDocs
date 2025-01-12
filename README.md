@@ -8,11 +8,11 @@ Collaborative LiveDoc là trình soạn thảo văn bản cộng tác theo thờ
 2. ⚙️ [Tech Stack](#tech-stack)
 3. 🔋 [Features](#features)
 4. 🚀 [Images](#images)
-5. 🔗 [Links](#demo)
+5. 🔗 [Demo](#demo)
 
 ## <a name="introduction">🤖 Introduction</a>
 
-Được xây dựng với Next.js để xử lý giao diện người dùng, được tạo kiểu bằng TailwindCSS và xây dựng server api và websocket với Python FastAPI. LiveDocs đươc lấy cảm hứng từ Google Docs với mục tiêu chính là thể hiện các kỹ năng xử lý thời gian thực.
+Được xây dựng với Next.js để xử lý giao diện người dùng, được tạo kiểu bằng TailwindCSS và xây dựng server api, websocket với Python FastAPI. LiveDocs đươc lấy cảm hứng từ Google Docs với mục tiêu chính là thể hiện các kỹ năng xử lý thời gian thực.
 
 ## <a name="tech-stack">⚙️ Tech Stack</a>
 
